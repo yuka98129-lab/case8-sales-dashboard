@@ -12,9 +12,79 @@
 - AI 分析コメント(「分析を作り直す」で再生成。結果は保存され、次回開いたときも表示)
 - ログイン(メール+パスワード)。自分が取り込んだデータは自分だけが見られる(Supabase の RLS)
 
+## 運用マニュアル(紙1枚)
+
+### 月次の運用フロー
+
+1. Shopify などから、売上の CSV をダウンロードする
+2. ダッシュボードを開いて、ログインする
+3. 「売上 CSV を取り込む」の枠に、CSV をドラッグ&ドロップする(クリックして選んでもよい)
+4. 「○行 取り込みました / ×行 スキップしました」の表示を確認する。スキップがあれば、理由を読み、必要なら「スキップした行をダウンロード(CSV)」で行を取り出して、元データを直す
+5. 画面の上の「取り込んだデータ」と「月」を選んで、KPI(売上・粗利・リピート率)とグラフを見る
+6. 「AI 分析を作る」(2回目以降は「分析を作り直す」)を押して、分析コメントを出す
+7. ダッシュボードのスクリーンショットを、社内の報告に使う
+
+### 数字を確かめるとき
+
+- 初回や、定義を変えたときは、同じ CSV を Excel で集計して、画面の数字と見比べる(合計は SUM、カテゴリ別はピボットテーブル)
+- 間違えて取り込んだデータは、「このデータを削除」→「本当に削除する」で消せる
+- AI の文章は、参考情報。数字は、画面の KPI やグラフと見比べて使う
+
+### トラブルのとき
+
+| 症状 | 考えられる原因と対処 |
+|---|---|
+| 「必要な列が足りません」と出る | 列名が違う。下の「CSV フォーマット」を見て、列名を直す |
+| 一部の行がスキップされる | 日付が読めない、数量が0以下、数字が文字になっている、など。表示された理由を見て、CSV を直す |
+| 「Claude のAPIキーが正しくありません」と出る | `ANTHROPIC_API_KEY` が違う、または期限切れ。Vercel の環境変数を入れ直して、再デプロイする |
+| 「Claude が混み合っているか、利用上限です」と出る | 少し待って、もう一度押す(それでもだめなら、Anthropic の利用上限を確認) |
+| 「モデル名が見つかりません」と出る | `ANTHROPIC_MODEL` に、使えるモデル名を入れて、再デプロイする |
+| ログインできない | メールアドレスとパスワードを確認する。ユーザーは Supabase の Authentication で管理 |
+
+## CSV フォーマット
+
+### 必須の列
+
+| 列名 | 内容 | 例 |
+|---|---|---|
+| `order_date` | 注文日 | `2025-09-03` |
+| `product_name` | 商品名 | `オーガニックコットンTシャツ` |
+| `quantity` | 数量(1以上の整数) | `2` |
+| `revenue` | 売上(円。0以上) | `7600` |
+| `cost` | 原価(円。0以上) | `2800` |
+
+### あれば使う列
+
+| 列名 | 内容 | 使い道 |
+|---|---|---|
+| `customer_id` | 顧客ID | リピート率。空の行は、リピート率に含めない(件数を画面に出す) |
+| `category` | カテゴリ | カテゴリ別グラフ。空なら「(カテゴリなし)」 |
+| `sku` | 商品コード | 売れ筋ランキング。空なら商品名 |
+
+### 読み取りのルール
+
+- 文字コード: UTF-8 を推奨。Shift_JIS(Excel の「CSV」保存)も自動で判別する
+- 日付: `2025-09-03` / `2025/9/3` / `2025.9.3` / `2025年9月3日` / `2025-09-03 10:00:00 +0900` を読める。存在しない日付(2月30日など)は、スキップする
+- 数字: `¥7,600` / `7,600円` / 全角数字も読める
+- 列名の揺れ(例): `Order Date`・`Created at`・`注文日` → `order_date`、`Lineitem name`・`商品名` → `product_name`、`Lineitem quantity`・`数量` → `quantity`、`売上`・`Line total` → `revenue`、`原価` → `cost`
+- 1回の取り込みは 5,000 行まで(約3MB)。行番号は、Excel で開いたときと同じ
+- 読めない行は、捨てずに、「何行目が、なぜダメか」を表示する
+
+## 環境変数一覧
+
+| 名前 | 必須 | 内容 | 注意 |
+|---|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | 必須 | Supabase のURL(`https://〇〇.supabase.co`) | 最後に `/rest/v1/` を付けない。公開されてよい値 |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 必須 | Supabase の公開用キー(anon) | 公開されてよい値(権限は RLS で守る) |
+| `ANTHROPIC_API_KEY` | 必須 | Claude の API キー | **秘密**。GitHub に置かない。Vercel では Secret にする |
+| `ANTHROPIC_MODEL` | 任意 | Claude のモデル名(既定: `claude-sonnet-4-6`) | モデルが廃止されたときに変更する |
+
+- `NEXT_PUBLIC_` で始まる値は、ビルドのときにアプリに埋め込まれる。変えたら、再デプロイ(作り直し)が必要
+- 例は `.env.example` にある。手元で動かすときは、`.env.local` にコピーして使う(GitHub に置かない)
+
 ## 技術
 
-Next.js(App Router)/ TypeScript / Supabase(認証・PostgreSQL・RLS)/ Recharts / Anthropic SDK(既定モデル `claude-sonnet-4-6`)/ vitest / GitHub Actions / Vercel
+Next.js(App Router)/ TypeScript / Supabase(認証・PostgreSQL・RLS)/ Recharts / Anthropic SDK / vitest / GitHub Actions / Vercel
 
 ## 表(課題の uploads / sales_data / reports に対応)
 
@@ -32,9 +102,9 @@ Next.js(App Router)/ TypeScript / Supabase(認証・PostgreSQL・RLS)/ Recharts 
 2. `.env.example` を `.env.local` にコピーして、値を入れる
 3. `npm install` → `npm run dev` → http://localhost:3000
 
-Vercel に公開するときは、同じ3つの値(`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `ANTHROPIC_API_KEY`)を Environment Variables に登録します。
+Vercel に公開するときは、「環境変数一覧」の必須の3つを Environment Variables に登録します。
 
-## テスト
+## テストと自動実行(CI/CD)
 
 ```
 npm test          # 自動テスト(CSV 読み取り・集計・AI 出力の検査・DB の権限)
@@ -42,11 +112,13 @@ npm run type-check
 npm run check:ai  # 本物の Claude で動作確認(手動。ANTHROPIC_API_KEY が必要)
 ```
 
-GitHub Actions(`.github/workflows/ci.yml`)が、push / プルリクエストのたびに、型チェック・テスト・ビルドを自動で実行します。公開は Vercel が GitHub と連携して自動で行います。
+- GitHub Actions(`.github/workflows/ci.yml`)が、push / プルリクエストのたびに、型チェック・テスト・ビルドを自動で実行します
+- 公開は、Vercel が GitHub と連携して、push のたびに自動で行います
+- 注意: いまは「テストは GitHub、公開は Vercel」と別々に動いています。**テストが失敗しても、Vercel の公開は止まりません**。テストに合格したときだけ公開する形にするのは、今後の改善点です
 
 ## 集計の正解値との一致
 
-サンプル(`tests/fixtures/sample-sales.csv`)の集計が、課題 README の正解値と円単位で一致することを、自動テストで確認しています。
+サンプル(`tests/fixtures/sample-sales.csv`)の集計が、課題 README の正解値と円単位で一致することを、自動テストで確認しています。公開したアプリでも、画面の数字を目で見比べました。
 
 | 月 | 売上 | 粗利 |
 |---|---|---|
@@ -63,8 +135,10 @@ GitHub Actions(`.github/workflows/ci.yml`)が、push / プルリクエストの�
 - 月ごとのリピート率 = その月の購入者のうち、それ以前の月にも購入した人の割合
 - 顧客IDが空の行は、リピート率に含めません(画面に件数を表示)
 
-## 制限(Phase 2 として未実装)
+## 制限(次のフェーズとして未実装)
 
 - Slack 通知、Shopify などの API 連携、PDF レポート出力
+- 売上予測、在庫の最適化
+- AI の利用回数の上限・利用料の制限
 - 1回の取り込みは 5,000 行まで
 - AI の文章は参考情報です。数字は、画面の KPI やグラフと見比べて使ってください
