@@ -2,7 +2,7 @@
 
 売上 CSV を取り込むと、月次の売上・粗利・リピート率(KPI)、グラフ、売れ筋ランキング、そして Claude による分析コメント(総括・注目点・懸念点・翌月のアクション提案)を表示する Web アプリです。
 
-公開URL: (Vercel の URL をここに書く)
+公開URL: https://case8-sales-dashboard-psi.vercel.app
 
 ## できること
 
