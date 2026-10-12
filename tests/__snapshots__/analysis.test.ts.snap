@@ -1,0 +1,180 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Snapshot(前と変わっていないか) > AI に渡す数字(サンプル CSV の集計) 1`] = `
+{
+  "categoryChangeLatestVsPrevious": [
+    {
+      "category": "アウター",
+      "change": 153600,
+      "changePct": 344.4,
+      "latestMonthRevenue": 198200,
+      "previousMonthRevenue": 44600,
+    },
+    {
+      "category": "トップス",
+      "change": -3800,
+      "changePct": -9.6,
+      "latestMonthRevenue": 35600,
+      "previousMonthRevenue": 39400,
+    },
+    {
+      "category": "ボトムス",
+      "change": -17800,
+      "changePct": -52.5,
+      "latestMonthRevenue": 16100,
+      "previousMonthRevenue": 33900,
+    },
+    {
+      "category": "アクセサリー",
+      "change": -14800,
+      "changePct": -50,
+      "latestMonthRevenue": 14800,
+      "previousMonthRevenue": 29600,
+    },
+  ],
+  "categoryTotals": [
+    {
+      "category": "アウター",
+      "revenue": 287400,
+      "sharePct": 51.3,
+    },
+    {
+      "category": "トップス",
+      "revenue": 114400,
+      "sharePct": 20.4,
+    },
+    {
+      "category": "ボトムス",
+      "revenue": 82200,
+      "sharePct": 14.7,
+    },
+    {
+      "category": "アクセサリー",
+      "revenue": 76600,
+      "sharePct": 13.7,
+    },
+  ],
+  "latestMonth": "2025-11",
+  "latestVsPrevious": {
+    "profitChangePct": 76.1,
+    "profitMarginPct": 61.6,
+    "returningRateDiffPt": 8.2,
+    "revenueChangePct": 79.5,
+  },
+  "monthCount": 3,
+  "monthly": [
+    {
+      "customers": 12,
+      "month": "2025-09",
+      "profit": 93400,
+      "returningRate": 0,
+      "revenue": 148400,
+    },
+    {
+      "customers": 13,
+      "month": "2025-10",
+      "profit": 92600,
+      "returningRate": 38.5,
+      "revenue": 147500,
+    },
+    {
+      "customers": 15,
+      "month": "2025-11",
+      "profit": 163100,
+      "returningRate": 46.7,
+      "revenue": 264700,
+    },
+  ],
+  "previousMonth": "2025-10",
+  "repeatRateOverallPct": 28.6,
+  "topSkusAllPeriod": [
+    {
+      "product_name": "オーガニックコットンTシャツ",
+      "quantity": 14,
+      "revenue": 53200,
+      "sku": "LUM-TOP-01",
+    },
+    {
+      "product_name": "リネンブラウス",
+      "quantity": 9,
+      "revenue": 61200,
+      "sku": "LUM-TOP-02",
+    },
+    {
+      "product_name": "レザーベルト",
+      "quantity": 8,
+      "revenue": 36000,
+      "sku": "LUM-ACC-01",
+    },
+    {
+      "product_name": "ダウンジャケット",
+      "quantity": 7,
+      "revenue": 138600,
+      "sku": "LUM-OUT-02",
+    },
+    {
+      "product_name": "シルクスカーフ",
+      "quantity": 7,
+      "revenue": 40600,
+      "sku": "LUM-ACC-02",
+    },
+  ],
+  "topSkusLatestMonth": [
+    {
+      "product_name": "ダウンジャケット",
+      "quantity": 5,
+      "revenue": 99000,
+      "sku": "LUM-OUT-02",
+    },
+    {
+      "product_name": "ウールコート",
+      "quantity": 4,
+      "revenue": 99200,
+      "sku": "LUM-OUT-01",
+    },
+    {
+      "product_name": "オーガニックコットンTシャツ",
+      "quantity": 4,
+      "revenue": 15200,
+      "sku": "LUM-TOP-01",
+    },
+    {
+      "product_name": "リネンブラウス",
+      "quantity": 3,
+      "revenue": 20400,
+      "sku": "LUM-TOP-02",
+    },
+    {
+      "product_name": "レザーベルト",
+      "quantity": 2,
+      "revenue": 9000,
+      "sku": "LUM-ACC-01",
+    },
+  ],
+}
+`;
+
+exports[`Snapshot(前と変わっていないか) > AI への指示(システムプロンプト) 1`] = `
+"あなたは EC ブランドのデータコンサルタントです。
+渡された売上データ(JSON)だけをもとに分析し、次の JSON の形だけで出力してください。前後に説明文や、コードブロック(\`\`\`)は付けないでください。
+
+{
+  "summary": "今月の売上動向の総括(200字以内。コンサルのトーン)",
+  "highlights": ["注目ポイント1", "注目ポイント2", "注目ポイント3"],
+  "concerns": ["懸念点1", "懸念点2"],
+  "actions": [
+    {"priority": "high", "action": "翌月のアクション提案1"},
+    {"priority": "medium", "action": "翌月のアクション提案2"}
+  ]
+}
+
+守ること:
+- 「今月」は、データの中で一番新しい月(latestMonth)のこと。前月(previousMonth)と比べて書く
+- 数字は「約 X 円」「+Y%」のように、渡された値をもとに、具体的に書く。渡されていない数字は作らない
+- 推測ではなく、データから読み取れる事実をもとに書く。原因をデータから言い切れないときは、「〜の可能性があります」と書く
+- どのカテゴリ・商品が、売上の増減を押し上げたか(または下げたか)を、必ず入れる
+- アクション提案は、実行できる具体策にする。「広告を強化」ではなく「カテゴリ A の Instagram 広告予算を 30% 増額」のレベルで書く
+- priority は "high" / "medium" / "low" のどれか。high は最大2つまで
+- 文章に、Markdown の記号(** や # など)は使わない。ふつうの文章で書く
+- 売上データが少ない(月数が少ない)ときは、その限界も、懸念点に1つ書く"
+`;
